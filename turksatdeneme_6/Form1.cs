@@ -14,12 +14,17 @@ using System.Threading;
 using GMap.NET.CacheProviders;
 using System.IO;
 using GMap.NET.MapProviders;
+using CefSharp;
+using CefSharp.WinForms;
 using System.Security.Cryptography;
 
 namespace turksatdeneme_6
 {
     public partial class Form1 : Form
     {
+        private int x;
+        private int y;
+        private int z;
         Bitmap image;
         string base64Text;
         private static List<Telemetri> dataset;
@@ -28,10 +33,14 @@ namespace turksatdeneme_6
         private FilterInfoCollection webcam; //webcam isminde tanımladığımız değişken bilgisayara kaç kamera bağlıysa onları tutan bir dizi.
         private VideoCaptureDevice cam; //cam ise bizim kullanacağımız aygıt.
         public bool IsClosed { get; private set; }
-
+        public ChromiumWebBrowser chromeBrowser;
         public Form1()
         {
+
             InitializeComponent();
+            InitializeChromium();
+            //  Javascript'te CefCustomObject sınıfının işleviyle "cefCustomObject" adlı bir nesneyi kaydediyoruz: :3
+           //  chromeBrowser.RegisterJsObject("cefCustomObject", new CefCustomObject (chromeBrowser, this));
             //com3 usb bağlıntısını kontrol ediyoruz ve bağlantının açılıp açılmadığını denetliyoruz
             while (true)
                 try
@@ -42,11 +51,11 @@ namespace turksatdeneme_6
                         break;
                     }
                 }
-                catch (Exception e)
+               catch (Exception e)
                 {
                     MessageBox.Show(e.Message);
                 }
-
+               
         }
 
         void Cam_NewFrame(object sender, NewFrameEventArgs eventArgs)
@@ -70,7 +79,10 @@ namespace turksatdeneme_6
 
         private void Form1_Load_1(object sender, EventArgs e)
         {
-           
+            webBrowser1.ScriptErrorsSuppressed = true;
+            webBrowser1.Navigate($"file:///{Environment.CurrentDirectory}/simulator/index.html#{x++},{y--},{z++}");
+            webBrowser1.Refresh();
+
 
             var ports = SerialPort.GetPortNames();
             cmbPort.DataSource = ports;
@@ -133,21 +145,21 @@ namespace turksatdeneme_6
                 var tele = new Telemetri
                 {
                     Uydu_Statusu = "Beklemede",
-                    Basinc = float.Parse(pots[7]) / 100.0f,
+                    Basinc = 1,//float.Parse(pots[7]) / 100.0f,
                     Donus_Sayisi = 0,
-                    Roll = float.Parse(pots[4]) / 100.0f,
+                    Roll = float.Parse(pots[2]) / 100.0f,
                     GPS_Long = 0,
                     Gonderme_Zamani = DateTime.Now,
-                    Takim_No = int.Parse(pots[9]),
+                    Takim_No =55502,// int.Parse(pots[9]),
                     GPS_Lat = 0,
                     GPS_Alt = 0,
                     Inis_Hizi = 0,
-                    Paket_No = int.Parse(pots[10]),
+                    Paket_No = 1,//int.Parse(pots[10]),
                     Pil_Gerilimi = 0,
                     Pitch = float.Parse(pots[1]) / 100f,
-                    Yaw = float.Parse(pots[5]) / 100f,
-                    Yukseklik = float.Parse(pots[8]) / 100.0f,
-                    Sicaklik = float.Parse(pots[6]) / 100.0f,
+                    Yaw = float.Parse(pots[3]) / 10000f,
+                    Yukseklik =255,// float.Parse(pots[8]) / 100.0f,
+                    Sicaklik =29,// float.Parse(pots[6]) / 100.0f,
                     Manyetik_Alan = 1,
                     Pil_Gerilimi2 = 4,
                     Video_Aktarım_Bilgisi = 1
@@ -166,8 +178,9 @@ namespace turksatdeneme_6
                 this.chtRoll.Series["Roll"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Roll);
                 this.chtSck.Series["Sıcaklık"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Sicaklik);
                 this.chtYaw.Series["Yaw"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Yaw);
-                this.chtYks.Series["Yükseklik m"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Yukseklik);
-
+                this.chtYks.Series["Yükseklik"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Yukseklik);
+                webBrowser1.Navigate($"file:///{Environment.CurrentDirectory}/simulator/index.html#{tele.Pitch},{tele.Roll},{tele.Yaw}");
+                webBrowser1.Refresh();
                 if (tele.Manyetik_Alan == 1)
                 {
                     txtOtoAyr.Text = ("Otonom ayrılma gerçekleşmedi.");
@@ -180,6 +193,7 @@ namespace turksatdeneme_6
             }
 
            
+
 
         }
 
@@ -252,6 +266,7 @@ namespace turksatdeneme_6
             ExportCsv(Tele, "Telemetriess");
 
             Environment.Exit(0);
+            Cef.Shutdown();
         }
 
         public static void ExportCsv<T>(List<T> genericList, string fileName)
@@ -303,18 +318,26 @@ namespace turksatdeneme_6
 
         private void button2_Click(object sender, EventArgs e)
         {
+            FolderBrowserDialog fbd = new FolderBrowserDialog();
+            fbd.Description = "Custom Description";
+
+            if (fbd.ShowDialog() == DialogResult.OK)
+            {
+                string sSelectedPath = fbd.SelectedPath;
+                axWindowsMediaPlayer1.URL = sSelectedPath;
+            }
+
             OpenFileDialog dialog = new OpenFileDialog();
             dialog.Filter = "Image Files(*.BMP;*.JPG;*.PNG)|*.BMP;*.JPG;*.PNG" +
-            "|All files(*.*)|*.*";
+            "|All files(*.*)|*.*" + "|Video files(*.AVI; *.MP4)|*.AVI;*.MP4";
             dialog.CheckFileExists = true;
             dialog.Multiselect = false;
             if (dialog.ShowDialog() == DialogResult.OK)
             {
                 image = new Bitmap(dialog.FileName);
-                pictureBox1.Image = (Image)image;
-
+                
                 byte[] imageArray = System.IO.File.ReadAllBytes(dialog.FileName);
-                base64Text = Convert.ToBase64String(imageArray); //base64Text must be global but I'll use  richtext
+                base64Text = Convert.ToBase64String(imageArray); // base64Text global olmalı ama richtextbox kullanacağım
                 richTextBox1.Text = base64Text;
             }
         }
@@ -322,6 +345,22 @@ namespace turksatdeneme_6
         private void richTextBox1_TextChanged(object sender, EventArgs e)
         {
             richTextBox1.Visible = false;
+        }
+        public void InitializeChromium()
+        {
+            CefSettings settings = new CefSettings();
+            // cef'i başlatıyoruz
+            Cef.Initialize(settings);
+            // Bir tarayıcı bileşeni oluşturuyoruz
+            chromeBrowser = new ChromiumWebBrowser("https://samsununi.almscloud.com/Account/LoginBefore");
+            //   Bunu forma ekleyip ve form penceresine dolduruyoruz.
+            this.Controls.Add(chromeBrowser);
+            chromeBrowser.Dock = webBrowser1.Dock;
+        }
+
+        private void webBrowser1_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
+        {
+            webBrowser1.ScrollBarsEnabled = true;
         }
     }
 }
