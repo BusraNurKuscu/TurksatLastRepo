@@ -17,21 +17,29 @@ using GMap.NET.MapProviders;
 using CefSharp;
 using CefSharp.WinForms;
 using System.Security.Cryptography;
+using Accord.Video.FFMPEG;
+using Accord.Video.VFW;
 
 namespace turksatdeneme_6
 {
     public partial class Form1 : Form
     {
+        private VideoCaptureDeviceForm VideoCaptureDevices;
+
+        private VideoFileWriter FileWriter = new VideoFileWriter();
+        private SaveFileDialog saveAvi;
+        public static Bitmap _latestFrame;
         private int x;
         private int y;
         private int z;
         Bitmap image;
+        Bitmap video;
         string base64Text;
         private static List<Telemetri> dataset;
         private static string _data;
         private static string _oldData;
         private FilterInfoCollection webcam; //webcam isminde tanımladığımız değişken bilgisayara kaç kamera bağlıysa onları tutan bir dizi.
-        private VideoCaptureDevice cam; //cam ise bizim kullanacağımız aygıt.
+        private VideoCaptureDevice cam= null; //cam ise bizim kullanacağımız aygıt.
         public bool IsClosed { get; private set; }
         public ChromiumWebBrowser chromeBrowser;
         public Form1()
@@ -60,8 +68,19 @@ namespace turksatdeneme_6
 
         void Cam_NewFrame(object sender, NewFrameEventArgs eventArgs)
         {
-            Bitmap bmp = (Bitmap)eventArgs.Frame.Clone(); //kısaca bu eventta kameradan alınan görüntüyü picturebox a atıyoruz.
-            pcbVideo.Image = bmp;
+            Bitmap video = (Bitmap)eventArgs.Frame.Clone(); //kısaca bu eventta kameradan alınan görüntüyü picturebox a atıyoruz.
+            pcbVideo.Image = video;
+            if (butStop.Text == "Kayıt durdu.")
+            {
+                video = (Bitmap)eventArgs.Frame.Clone();
+                pcbVideo.Image = (Bitmap)eventArgs.Frame.Clone();
+                FileWriter.WriteVideoFrame(video);
+            }
+            else
+            {
+                video = (Bitmap)eventArgs.Frame.Clone();
+                pcbVideo.Image = (Bitmap)eventArgs.Frame.Clone();
+            }
         }
         private void Cek_Click(object sender, EventArgs e)
         {
@@ -79,7 +98,7 @@ namespace turksatdeneme_6
 
         private void Form1_Load_1(object sender, EventArgs e)
         {
-            webBrowser1.ScriptErrorsSuppressed = true;
+        webBrowser1.ScriptErrorsSuppressed = true;
             webBrowser1.Navigate($"file:///{Environment.CurrentDirectory}/simulator/index.html#{x++},{y--},{z++}");
             webBrowser1.Refresh();
 
@@ -111,7 +130,15 @@ namespace turksatdeneme_6
                 comboBox1.Items.Add(item.Name); //kameraları combobox a dolduruyoruz.
             }
             comboBox1.SelectedIndex = 0;
+            //VideoCaptureDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
+            //foreach (FilterInfo VideoCaptureDevice in VideoCaptureDevices)
+            //{
+            //    comboBox1.Items.Add(VideoCaptureDevice.Name);
+            //}
+            comboBox1.SelectedIndex = 0;
             dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+
+            
 
 
         }
@@ -122,11 +149,15 @@ namespace turksatdeneme_6
             VideoCaptureDevice(webcam[comboBox1.SelectedIndex].MonikerString); //başlaya basıldığıdnda yukarda tanımladığımız cam değişkenine comboboxta seçilmş olan kamerayı atıyoruz.
             cam.NewFrame += new NewFrameEventHandler(Cam_NewFrame);
             cam.Start(); //kamerayı başlatıyoruz.
+            //cam = new 
+            //VideoCaptureDevice(VideoCaptureDevices[comboBox1.SelectedIndex].MonikerString);
+            //cam.NewFrame += new NewFrameEventHandler(FinalVideo_NewFrame);
+            //cam.Start();
         }
 
         private void btnStop_Click(object sender, EventArgs e)
         {
-
+            butStop.Text = "Kayıt durdu.";
             if (cam.IsRunning)
             {
                 cam.Stop(); // kamerayı durduruyoruz.
@@ -144,25 +175,26 @@ namespace turksatdeneme_6
 
                 var tele = new Telemetri
                 {
-                    Uydu_Statusu = "Beklemede",
-                    Basinc = 1,//float.Parse(pots[7]) / 100.0f,
-                    Donus_Sayisi = 0,
-                    Roll = float.Parse(pots[2]) / 100.0f,
-                    GPS_Long = 0,
-                    Gonderme_Zamani = DateTime.Now,
-                    Takim_No =55502,// int.Parse(pots[9]),
-                    GPS_Lat = 0,
-                    GPS_Alt = 0,
-                    Inis_Hizi = 0,
-                    Paket_No = 1,//int.Parse(pots[10]),
-                    Pil_Gerilimi = 0,
-                    Pitch = float.Parse(pots[1]) / 100f,
-                    Yaw = float.Parse(pots[3]) / 10000f,
-                    Yukseklik =255,// float.Parse(pots[8]) / 100.0f,
-                    Sicaklik =29,// float.Parse(pots[6]) / 100.0f,
-                    Manyetik_Alan = 1,
-                    Pil_Gerilimi2 = 4,
-                    Video_Aktarım_Bilgisi = 1
+                    Takim_No = 55502,// int.Parse(pots[0]),
+                    Paket_No = 1,//int.Parse(pots[1]),
+                    Gonderme_Zamani =DateTime.Now,//DateTime.Parse(pots[2]),
+                    Basinc = 1,//float.Parse(pots[3]) / 100.0f,
+                    Yukseklik = 255,// float.Parse(pots[4]) / 100.0f,
+                    Inis_Hizi = 0,//float.Parse(pots[5]) / 100.0f,
+                    Sicaklik = 29,// float.Parse(pots[6]) / 100.0f,
+                    Pil_Gerilimi = 0,//float.Parse(pots[7]) / 100.0f,
+                    Pil_Gerilimi2 = 4,//float.Parse(pots[8]) / 100.0f,
+                    GPS_Lat = 0,//float.Parse(pots[9]) / 100.0f,
+                    GPS_Long = 0,//float.Parse(pots[10]) / 100.0f,
+                    GPS_Alt = 0,//float.Parse(pots[11]) / 100.0f,
+                    Uydu_Statusu = "Beklemede",//int.Parse(pots[12]) / 100.0f,
+                    Pitch = float.Parse(pots[13]) / 100f,
+                    Roll = float.Parse(pots[14]) / 100.0f,
+                    Yaw = float.Parse(pots[15]) / 100f,
+                    Donus_Sayisi = 0,//float.Parse(pots[16]) / 100.0f,
+                    Video_Aktarım_Bilgisi = 1,//float.Parse(pots[17]) / 100.0f
+                    Manyetik_Alan = 1//float.Parse(pots[18]) / 100.0f,
+
                 };
 
                 Telemetri.Add(tele);
@@ -172,13 +204,13 @@ namespace turksatdeneme_6
                 this.chtDns.Series["Dönüş Sayısı"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Donus_Sayisi);
                 this.chtGPSLg.Series["GPS Long"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.GPS_Long);
                 this.chtGPSLt.Series["GPS Lat"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.GPS_Lat);
-                this.chtHiz.Series["İniş Hızı"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Inis_Hizi);
-                this.chtPil.Series["Pil Gerilimi"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Pil_Gerilimi);
+                this.chtHiz.Series["İniş Hızı m/s"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Inis_Hizi);
+                this.chtPil.Series["Pil Gerilimi V"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Pil_Gerilimi);
                 this.chtPtc.Series["Pitch"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Pitch);
                 this.chtRoll.Series["Roll"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Roll);
-                this.chtSck.Series["Sıcaklık"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Sicaklik);
+                this.chtSck.Series["Sıcaklık C"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Sicaklik);
                 this.chtYaw.Series["Yaw"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Yaw);
-                this.chtYks.Series["Yükseklik"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Yukseklik);
+                this.chtYks.Series["Yükseklik m"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Yukseklik);
                 webBrowser1.Navigate($"file:///{Environment.CurrentDirectory}/simulator/index.html#{tele.Pitch},{tele.Roll},{tele.Yaw}");
                 webBrowser1.Refresh();
                 if (tele.Manyetik_Alan == 1)
@@ -189,7 +221,7 @@ namespace turksatdeneme_6
                 {
                     txtOtoAyr.Text = ("Otonom ayrılma gerçekleşti.");
                 }
-                
+               // label2.Text = "Device running..." + cam.FramesReceived.ToString() + " FPS";
             }
 
            
@@ -262,9 +294,20 @@ namespace turksatdeneme_6
 
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)
         {
+            //saveAvi = new SaveFileDialog();
+            //saveAvi.Filter = "Avi Files (*.avi)|*.avi";
+            // FileWriter.WriteVideoFrame(video);
+            //if (saveAvi.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            //{
+            //    int h = VideoCaptureDevices.VideoDevice.VideoResolution.FrameSize.Height;
+            //    int w = VideoCaptureDevices.VideoDevice.VideoResolution.FrameSize.Width;
+            //    FileWriter.Open(saveAvi.FileName, w, h, 25, VideoCodec.Default, 5000000);
+            //    FileWriter.WriteVideoFrame(video);
+            //    butStop.Text = "Kayıt durdu.";
+            //}
             var Tele = new List<Telemetri>(dataset);
             ExportCsv(Tele, "Telemetriess");
-
+            if (cam.IsRunning == true) cam.Stop();
             Environment.Exit(0);
             Cef.Shutdown();
         }
@@ -344,7 +387,7 @@ namespace turksatdeneme_6
 
         private void richTextBox1_TextChanged(object sender, EventArgs e)
         {
-            richTextBox1.Visible = false;
+            richTextBox1.Visible = true;
         }
         public void InitializeChromium()
         {
@@ -361,6 +404,10 @@ namespace turksatdeneme_6
         private void webBrowser1_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
         {
             webBrowser1.ScrollBarsEnabled = true;
+        }
+        private void textBox3_TextChanged(object sender, EventArgs e)
+        {
+            butStop.Visible = true;
         }
     }
 }
