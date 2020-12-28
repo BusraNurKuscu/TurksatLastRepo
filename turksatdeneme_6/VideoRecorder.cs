@@ -69,8 +69,6 @@ namespace turksatdeneme_6
             clear();
 
 
-
-
         }
         public void Start()
         {
@@ -95,11 +93,7 @@ namespace turksatdeneme_6
         {
             stop();
         }
-        void refreshFile()
-        {
-          
-            
-            }
+       
         void stop()
         {
             cam.Stop();

@@ -43,9 +43,9 @@ namespace turksatdeneme_6
         {
 
             InitializeComponent();
-            InitializeChromium();
+          
             //  Javascript'te CefCustomObject sınıfının işleviyle "cefCustomObject" adlı bir nesneyi kaydediyoruz: :3
-            //  chromeBrowser.RegisterJsObject("cefCustomObject", new CefCustomObject (chromeBrowser, this));
+           //  chromeBrowser.RegisterJsObject("cefCustomObject", new CefCustomObject (chromeBrowser, this));
             //com3 usb bağlıntısını kontrol ediyoruz ve bağlantının açılıp açılmadığını denetliyoruz
             while (true)
                 try
@@ -56,22 +56,16 @@ namespace turksatdeneme_6
                         break;
                     }
                 }
-                catch (Exception e)
+               catch (Exception e)
                 {
                     MessageBox.Show(e.Message);
                 }
 
 
-
+               
         }
 
-        void Cam_NewFrame(object sender, NewFrameEventArgs eventArgs)
-        {
-            //kısaca bu eventta kameradan alınan görüntüyü picturebox a atıyoruz.
-
-
-
-        }
+        
         private void Cek_Click(object sender, EventArgs e)
         {
             SaveFileDialog saveFileDialog = new SaveFileDialog();
@@ -81,14 +75,14 @@ namespace turksatdeneme_6
 
             if (dialog == DialogResult.OK)
             {
-
+               
             }
 
         }
 
         private void Form1_Load_1(object sender, EventArgs e)
         {
-            webBrowser1.ScriptErrorsSuppressed = true;
+        webBrowser1.ScriptErrorsSuppressed = true;
             webBrowser1.Navigate($"file:///{Environment.CurrentDirectory}/simulator/index.html#{x++},{y--},{z++}");
             webBrowser1.Refresh();
 
@@ -128,7 +122,7 @@ namespace turksatdeneme_6
             comboBox1.SelectedIndex = 0;
             dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
 
-
+            
 
 
         }
@@ -136,12 +130,12 @@ namespace turksatdeneme_6
         private void btnStart_Click(object sender, EventArgs e)
         {
             videoRecorder1.Start();
-
+            
         }
 
         private void btnStop_Click(object sender, EventArgs e)
         {
-            videoRecorder1.Stop();
+            videoRecorder1.Stop(); 
 
         }
         private static void MakeAvi(List<Bitmap> maps)
@@ -161,145 +155,74 @@ namespace turksatdeneme_6
 
         private void tmrRefresh_Tick(object sender, EventArgs e)// timer ile gelen verileri saniyede bir yenilemeyi sağlayan fonksiyonumuz.
         {
-            try
+            if (_data != _oldData)
             {
-                if (_data != _oldData)
+                _oldData = _data;
+                string[] pots = _data.Split(',');
+
+                var tele = new Telemetri
                 {
-                    _oldData = _data;
-                    string[] pots = _data.Split(',');
+                    Takim_No = int.Parse(pots[0]),
+                    Paket_No = int.Parse(pots[1]),
+                    Gonderme_Zamani = DateTime.Now,//DateTime.Parse(pots[2]),
+                    Basinc = float.Parse(pots[3]) / 100.0f,
+                    Yukseklik = float.Parse(pots[4]) / 100.0f,
+                    Inis_Hizi = float.Parse(pots[5]) / 100.0f,
+                    Sicaklik = float.Parse(pots[6]) / 100.0f,
+                    Pil_Gerilimi = float.Parse(pots[7]) / 100.0f,
+                    Pil_Gerilimi2 = float.Parse(pots[8]) / 100.0f,
+                    GPS_Lat =  float.Parse(pots[9]) / 1000000.0f,
+                    GPS_Long =float.Parse(pots[10]) / 1000000.0f,
+                    GPS_Alt = float.Parse(pots[11]) / 100.0f,
+                    Uydu_Statusu = Convert.ToString(pots[12]),
+                    Pitch = float.Parse(pots[13]) / 100f,
+                    Roll = float.Parse(pots[14]) / 100.0f,
+                    Yaw = float.Parse(pots[15]) / 100f,
+                    Donus_Sayisi = float.Parse(pots[16]) / 100.0f,
+                    Video_Aktarım_Bilgisi = float.Parse(pots[17]) / 100.0f,
+                    Manyetik_Alan = float.Parse(pots[18]) / 100.0f,
+                };
 
-                    var tele = new Telemetri
-                    {
-                        Takim_No = int.Parse(pots[0]),
-                        Paket_No = int.Parse(pots[1]),
-                        Gonderme_Zamani = DateTime.Now,//DateTime.Parse(pots[2]),
-                        Basinc = float.Parse(pots[3]) / 100.0f,
-                        Yukseklik = float.Parse(pots[4]) / 100.0f,
-                        Inis_Hizi = float.Parse(pots[5]) / 100.0f,
-                        Sicaklik = float.Parse(pots[6]) / 100.0f,
-                        Pil_Gerilimi = float.Parse(pots[7]) / 100.0f,
-                        Pil_Gerilimi2 = float.Parse(pots[8]) / 100.0f,
-                        GPS_Lat = float.Parse(pots[9]) / 1000000.0f,
-                        GPS_Long = float.Parse(pots[10]) / 1000000.0f,
-                        GPS_Alt = float.Parse(pots[11]) / 100.0f,
-                        Uydu_Statusu = Convert.ToString(pots[12]),
-                        Pitch = float.Parse(pots[13]) / 100f,
-                        Roll = float.Parse(pots[14]) / 100.0f,
-                        Yaw = float.Parse(pots[15]) / 100f,
-                        Donus_Sayisi = float.Parse(pots[16]) / 100.0f,
-                        Video_Aktarım_Bilgisi = float.Parse(pots[17]) / 100.0f,
-                        Manyetik_Alan = float.Parse(pots[18]) / 100.0f,
-                    };
+                Telemetri.Add(tele);
+                dataGridView1.DataSource = dataset = Telemetri.GetAll();
 
-                    Telemetri.Add(tele);
-                    dataGridView1.DataSource = dataset = Telemetri.GetAll();
-
-                    this.chtBsn.Series["Basınç hPa"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Basinc);
-                    this.chtDns.Series["Dönüş Sayısı"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Donus_Sayisi);
-                    this.chtGPSLg.Series["GPS Long"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.GPS_Long);
-                    this.chtGPSLt.Series["GPS Lat"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.GPS_Lat);
-                    this.chtHiz.Series["İniş Hızı m/s"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Inis_Hizi);
-                    this.chtPil.Series["Pil Gerilimi V"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Pil_Gerilimi);
-                    this.chtPtc.Series["Pitch"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Pitch);
-                    this.chtRoll.Series["Roll"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Roll);
-                    this.chtSck.Series["Sıcaklık C"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Sicaklik);
-                    this.chtYaw.Series["Yaw"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Yaw);
-                    this.chtYks.Series["Yükseklik m"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Yukseklik);
-                    webBrowser1.Navigate($"file:///{Environment.CurrentDirectory}/simulator/index.html#{tele.Pitch},{tele.Roll},{tele.Yaw}");
-                    webBrowser1.Refresh();
-                    if (tele.Manyetik_Alan == 1)
-                    {
-                        txtOtoAyr.Text = ("Otonom ayrılma gerçekleşmedi.");
-                    }
-                    else
-                    {
-                        txtOtoAyr.Text = ("Otonom ayrılma gerçekleşti.");
-                    }
-                    try
-                    {
-                        StringBuilder adress = new StringBuilder();
-                        adress.Append($"https://www.google.com.tr/maps/#{tele.GPS_Lat},{tele.GPS_Long},{tele.GPS_Alt}");
-                    }
-                    catch
-                    {
-                        MessageBox.Show("Beklenmedik bir hata oluştu.");
-                    }
+                this.chtBsn.Series["Basınç hPa"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Basinc);
+                this.chtDns.Series["Dönüş Sayısı"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Donus_Sayisi);
+                this.chtGPSLg.Series["GPS Long"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.GPS_Long);
+                this.chtGPSLt.Series["GPS Lat"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.GPS_Lat);
+                this.chtHiz.Series["İniş Hızı m/s"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Inis_Hizi);
+                this.chtPil.Series["Pil Gerilimi V"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Pil_Gerilimi);
+                this.chtPtc.Series["Pitch"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Pitch);
+                this.chtRoll.Series["Roll"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Roll);
+                this.chtSck.Series["Sıcaklık C"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Sicaklik);
+                this.chtYaw.Series["Yaw"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Yaw);
+                this.chtYks.Series["Yükseklik m"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Yukseklik);
+                webBrowser1.Navigate($"file:///{Environment.CurrentDirectory}/simulator/index.html#{tele.Pitch},{tele.Roll},{tele.Yaw}");
+                webBrowser1.Refresh();
+                if (tele.Manyetik_Alan == 1)
+                {
+                    txtOtoAyr.Text = ("Otonom ayrılma gerçekleşmedi.");
                 }
-
-            }
-            catch
-            {
-                if (_data != _oldData)
+                else
                 {
-                    _oldData = _data;
-                    string[] pots = _data.Split(',');
-
-                    var tele = new Telemetri
-                    {
-                        Takim_No = 0,
-                        Paket_No = 0,
-                        Gonderme_Zamani = DateTime.Parse(pots[2]),
-                        Basinc = 0,
-                        Yukseklik = 0,
-                        Inis_Hizi = 0,
-                        Sicaklik = 0,
-                        Pil_Gerilimi = 0,
-                        Pil_Gerilimi2 = 0,
-                        GPS_Lat = 0,
-                        GPS_Long = 0,
-                        GPS_Alt = 0,
-                        Uydu_Statusu = "Alınamıyor",
-                        Pitch = 0,
-                        Roll = 0,
-                        Yaw = 0,
-                        Donus_Sayisi = 0,
-                        Video_Aktarım_Bilgisi = 0,
-                        Manyetik_Alan = 0,
-                    };
-
-                    Telemetri.Add(tele);
-                    dataGridView1.DataSource = dataset = Telemetri.GetAll();
-
-                    this.chtBsn.Series["Basınç hPa"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Basinc);
-                    this.chtDns.Series["Dönüş Sayısı"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Donus_Sayisi);
-                    this.chtGPSLg.Series["GPS Long"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.GPS_Long);
-                    this.chtGPSLt.Series["GPS Lat"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.GPS_Lat);
-                    this.chtHiz.Series["İniş Hızı m/s"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Inis_Hizi);
-                    this.chtPil.Series["Pil Gerilimi V"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Pil_Gerilimi);
-                    this.chtPtc.Series["Pitch"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Pitch);
-                    this.chtRoll.Series["Roll"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Roll);
-                    this.chtSck.Series["Sıcaklık C"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Sicaklik);
-                    this.chtYaw.Series["Yaw"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Yaw);
-                    this.chtYks.Series["Yükseklik m"].Points.AddXY(tele.Gonderme_Zamani.ToString(), tele.Yukseklik);
-                    webBrowser1.Navigate($"file:///{Environment.CurrentDirectory}/simulator/index.html#{tele.Pitch},{tele.Roll},{tele.Yaw}");
-                    webBrowser1.Refresh();
-                    if (tele.Manyetik_Alan == 1)
-                    {
-                        txtOtoAyr.Text = ("Otonom ayrılma gerçekleşmedi.");
-                    }
-                    else
-                    {
-                        txtOtoAyr.Text = ("Otonom ayrılma gerçekleşti.");
-                    }
-                    try
-                    {
-                        StringBuilder adress = new StringBuilder();
-                        adress.Append($"https://www.google.com.tr/maps/#{tele.GPS_Lat},{tele.GPS_Long},{tele.GPS_Alt}");
-                    }
-                    catch
-                    {
-                        MessageBox.Show("Beklenmedik bir hata oluştu.");
-                    }
+                    txtOtoAyr.Text = ("Otonom ayrılma gerçekleşti.");
+                }
+                // label2.Text = "Device running..." + cam.FramesReceived.ToString() + " FPS";
+                try
+                {
+                    StringBuilder adress = new StringBuilder();
+                    adress.Append($"https://www.google.com.tr/maps/#{tele.GPS_Lat},{tele.GPS_Long},{tele.GPS_Alt}");
+                }
+                catch
+                {
+                    MessageBox.Show("Beklenmedik bir hata oluştu.");
                 }
             }
 
-           
+
+
+
         }
-
-    
-
-
-        
 
 
 
@@ -358,18 +281,12 @@ namespace turksatdeneme_6
             {
                 txtVdKytKnt.Text = ("Video SD karta kaydedilemedi.");
             }
-
-        }
-
-        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
-        {
-            var Tele = new List<Telemetri>(dataset);
-            ExportCsv(Tele, "Data");
-            Environment.Exit(0);
-            Cef.Shutdown();
             
 
         }
+
+       
+
 
         public static void ExportCsv<T>(List<T> genericList, string fileName)
         {
@@ -438,17 +355,7 @@ namespace turksatdeneme_6
         {
             richTextBox1.Visible = false;
         }
-        public void InitializeChromium()
-        {
-            CefSettings settings = new CefSettings();
-            // cef'i başlatıyoruz
-            Cef.Initialize(settings);
-            // Bir tarayıcı bileşeni oluşturuyoruz
-            chromeBrowser = new ChromiumWebBrowser("https://samsununi.almscloud.com/Account/LoginBefore");
-            //   Bunu forma ekleyip ve form penceresine dolduruyoruz.
-            this.Controls.Add(chromeBrowser);
-            chromeBrowser.Dock = webBrowser1.Dock;
-        }
+       
 
         private void webBrowser1_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
         {
