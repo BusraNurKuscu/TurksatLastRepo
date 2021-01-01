@@ -328,6 +328,7 @@ namespace turksatdeneme_6
         private void btnAyrıl_Click(object sender, EventArgs e)
         {
             serialPort1.Write("ayril");
+            
         }
 
         private void button1_Click(object sender, EventArgs e)
